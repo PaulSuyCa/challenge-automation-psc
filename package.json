@@ -1,0 +1,30 @@
+{
+  "name": "challenge-automation-psc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PaulSuyCa/challenge-automation-psc.git",
+    "test": "playwright test",
+    "test:api": "playwright test tests/api/pokemon.spec.ts",
+    "test:qa": "playwright test",
+    "test:cert": "playwright test",
+    "report": "playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PaulSuyCa/challenge-automation-psc/issues"
+  },
+  "homepage": "https://github.com/PaulSuyCa/challenge-automation-psc#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.8.0"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}
