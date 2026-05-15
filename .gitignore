@@ -8,9 +8,13 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
-# Environment/config sensitive files
+# Sensitive config files
 config/*.properties
 !config/*.example.properties
+
+# Local secrets
+.env*
+!.env.example
 
 # Logs
 *.log
