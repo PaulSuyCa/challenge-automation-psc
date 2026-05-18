@@ -5,6 +5,9 @@ export interface StripeCardData {
   expiryDate: string;
   cvc: string;
   cardHolder: string;
+  billingCountry?: string;
+  zipCode?: string;
+  phoneNumber?: string;
 }
 
 /**
@@ -44,7 +47,7 @@ export class PaymentPage {
   }
 
   /**
-   * Completa tarjeta Stripe y envía el pago.
+   * Completa tarjeta Stripe, cubre campos adicionales de CI y envía el pago.
    */
   async payWithStripeCard(cardData: StripeCardData): Promise<void> {
     await this.page.waitForLoadState('domcontentloaded');
@@ -68,6 +71,15 @@ export class PaymentPage {
       'input[name="billingName"], input[name="name"], #billingName, input[autocomplete="cc-name"]',
       cardData.cardHolder
     );
+
+    // En CI Stripe puede mostrar campos adicionales. Seleccionamos Perú para evitar ZIP obligatorio de USA.
+    await this.selectBillingCountryIfVisible(cardData.billingCountry ?? 'Peru');
+
+    // Desmarcamos Link para que no solicite teléfono adicional.
+    await this.disableSaveInformationIfVisible();
+
+    // Solo completa ZIP o teléfono si aún aparecen y si fueron enviados en la data.
+    await this.fillOptionalBillingFields(cardData);
 
     await this.submitPayment();
   }
@@ -224,5 +236,119 @@ export class PaymentPage {
     });
 
     await payButton.click();
+  }
+
+  /**
+   * Desmarca la opción de guardar información de pago si Stripe Link la muestra.
+   */
+  private async disableSaveInformationIfVisible(): Promise<void> {
+    const checkboxName = /Save my information|faster checkout/i;
+
+    const pageCheckbox = this.page.getByRole('checkbox', {
+      name: checkboxName,
+    }).first();
+
+    if (await pageCheckbox.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if (await pageCheckbox.isChecked().catch(() => false)) {
+        await pageCheckbox.uncheck({ force: true });
+      }
+
+      await expect(pageCheckbox).not.toBeChecked({
+        timeout: 5000,
+      });
+
+      return;
+    }
+
+    for (const frame of this.page.frames()) {
+      const frameCheckbox = frame.getByRole('checkbox', {
+        name: checkboxName,
+      }).first();
+
+      if (await frameCheckbox.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (await frameCheckbox.isChecked().catch(() => false)) {
+          await frameCheckbox.uncheck({ force: true });
+        }
+
+        await expect(frameCheckbox).not.toBeChecked({
+          timeout: 5000,
+        });
+
+        return;
+      }
+    }
+  }
+
+  /**
+   * Selecciona el país de facturación en Stripe si el campo aparece.
+   */
+  private async selectBillingCountryIfVisible(country: string): Promise<void> {
+    const countryName = /Country or region/i;
+
+    const pageCountry = this.page.getByRole('combobox', {
+      name: countryName,
+    }).first();
+
+    if (await pageCountry.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await pageCountry.selectOption({ label: country });
+      await this.validateSelectedCountry(pageCountry, country);
+      return;
+    }
+
+    for (const frame of this.page.frames()) {
+      const frameCountry = frame.getByRole('combobox', {
+        name: countryName,
+      }).first();
+
+      if (await frameCountry.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await frameCountry.selectOption({ label: country });
+        await this.validateSelectedCountry(frameCountry, country);
+        return;
+      }
+    }
+  }
+
+  /**
+   * Valida que el país seleccionado sea el esperado.
+   */
+  private async validateSelectedCountry(countryLocator: ReturnType<Page['locator']>, country: string): Promise<void> {
+    const selectedCountry = await countryLocator.evaluate((element) => {
+      const select = element as HTMLSelectElement;
+      return select.selectedOptions[0]?.textContent?.trim() ?? '';
+    });
+
+    expect(selectedCountry).toContain(country);
+  }
+
+  /**
+   * Completa campos adicionales de facturación si Stripe los muestra en CI.
+   */
+  private async fillOptionalBillingFields(cardData: StripeCardData): Promise<void> {
+    if (cardData.zipCode) {
+      await this.fillOptionalStripeField(
+        [
+          'input[name="postal"]',
+          'input[name="postalCode"]',
+          'input[autocomplete="postal-code"]',
+          'input[placeholder="ZIP"]',
+          'input[aria-label="ZIP"]',
+        ].join(', '),
+        cardData.zipCode
+      );
+    }
+
+    if (cardData.phoneNumber) {
+      await this.fillOptionalStripeField(
+        [
+          'input[name="phone"]',
+          'input[type="tel"]',
+          'input[autocomplete="tel"]',
+          'input[placeholder*="Phone"]',
+          'input[placeholder*="555"]',
+          'input[aria-label*="Phone"]',
+        ].join(', '),
+        cardData.phoneNumber
+      );
+    }
   }
 }
