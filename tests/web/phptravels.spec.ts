@@ -55,13 +55,13 @@ test.describe('PHPTravels - Web Tests', () => {
     await bookingPage.confirmBooking();
 
     await invoicePage.validateInvoiceOrPaymentStepLoaded();
-    await invoicePage.continueToPayment();
+    await invoicePage.continueToStripePayment();
 
     await paymentPage.proceedToStripeCheckout();
     await paymentPage.waitForStripeFormLoaded();
     await paymentPage.payWithStripeCard(stripeTestCards.successfulVisa);
     await paymentPage.validatePaymentResult();
 
-    await takeScreenshot(page, testInfo, 'phptravels-booking-guest-details');
+    await takeScreenshot(page, testInfo, 'phptravels-payment-success');
   });
 });
