@@ -1,0 +1,271 @@
+name: Playwright Automation Tests
+
+on:
+  push:
+    branches:
+      - main
+      - feature/automation-testing
+
+  pull_request:
+    branches:
+      - main
+      - feature/automation-testing
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to execute'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - cert
+
+      run_api:
+        description: 'Run API tests'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+      run_payment:
+        description: 'Run full web payment flow'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  api-and-smoke-tests:
+    name: API and Web Smoke Tests
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch'
+
+    env:
+      CI: true
+      QA_SECRET_KEY: ${{ secrets.QA_SECRET_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Create QA properties file
+        run: |
+          mkdir -p config
+          cat > config/qa.properties <<EOF
+          environment=QA
+          baseUrl=https://pokeapi.co/api/v2
+          webBaseUrl=https://phptravels.net/
+          secretVariable=QA_SECRET_KEY
+          EOF
+
+      - name: Set fallback QA secret if missing
+        run: |
+          if [ -z "$QA_SECRET_KEY" ]; then
+            echo "QA_SECRET_KEY=ci-fallback-secret" >> $GITHUB_ENV
+          fi
+
+      - name: TypeScript validation
+        run: npm run typecheck
+
+      - name: Run API tests QA
+        run: npm run test:api:qa
+
+      - name: Run Web Smoke QA
+        run: node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @smoke --project=web-chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-api-smoke
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-api-smoke
+          path: test-results/
+          retention-days: 7
+
+  manual-api-test:
+    name: Manual API Test by Environment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_api == 'true'
+
+    env:
+      CI: true
+      QA_SECRET_KEY: ${{ secrets.QA_SECRET_KEY }}
+      CERT_SECRET_KEY: ${{ secrets.CERT_SECRET_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Create environment properties file
+        run: |
+          mkdir -p config
+
+          if [ "${{ github.event.inputs.environment }}" = "cert" ]; then
+            cat > config/cert.properties <<EOF
+          environment=CERT
+          baseUrl=https://pokeapi.co/api/v2
+          webBaseUrl=https://phptravels.net/
+          secretVariable=CERT_SECRET_KEY
+          EOF
+          else
+            cat > config/qa.properties <<EOF
+          environment=QA
+          baseUrl=https://pokeapi.co/api/v2
+          webBaseUrl=https://phptravels.net/
+          secretVariable=QA_SECRET_KEY
+          EOF
+          fi
+
+      - name: Set fallback secret if missing
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "cert" ]; then
+            if [ -z "$CERT_SECRET_KEY" ]; then
+              echo "CERT_SECRET_KEY=ci-fallback-cert-secret" >> $GITHUB_ENV
+            fi
+          else
+            if [ -z "$QA_SECRET_KEY" ]; then
+              echo "QA_SECRET_KEY=ci-fallback-qa-secret" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: TypeScript validation
+        run: npm run typecheck
+
+      - name: Run API tests by environment
+        run: npm run test:api:${{ github.event.inputs.environment }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-api-${{ github.event.inputs.environment }}
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-api-${{ github.event.inputs.environment }}
+          path: test-results/
+          retention-days: 7
+
+  web-payment-test:
+    name: Web Payment Flow Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_payment == 'true'
+
+    env:
+      CI: true
+      QA_SECRET_KEY: ${{ secrets.QA_SECRET_KEY }}
+      CERT_SECRET_KEY: ${{ secrets.CERT_SECRET_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Create environment properties file
+        run: |
+          mkdir -p config
+
+          if [ "${{ github.event.inputs.environment }}" = "cert" ]; then
+            cat > config/cert.properties <<EOF
+          environment=CERT
+          baseUrl=https://pokeapi.co/api/v2
+          webBaseUrl=https://phptravels.net/
+          secretVariable=CERT_SECRET_KEY
+          EOF
+          else
+            cat > config/qa.properties <<EOF
+          environment=QA
+          baseUrl=https://pokeapi.co/api/v2
+          webBaseUrl=https://phptravels.net/
+          secretVariable=QA_SECRET_KEY
+          EOF
+          fi
+
+      - name: Set fallback secret if missing
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "cert" ]; then
+            if [ -z "$CERT_SECRET_KEY" ]; then
+              echo "CERT_SECRET_KEY=ci-fallback-cert-secret" >> $GITHUB_ENV
+            fi
+          else
+            if [ -z "$QA_SECRET_KEY" ]; then
+              echo "QA_SECRET_KEY=ci-fallback-qa-secret" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: TypeScript validation
+        run: npm run typecheck
+
+      - name: Run Web Payment by environment
+        run: node scripts/run-tests.js ${{ github.event.inputs.environment }} tests/web/phptravels.spec.ts --grep @payment --project=web-chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-payment-${{ github.event.inputs.environment }}
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-payment-${{ github.event.inputs.environment }}
+          path: test-results/
+          retention-days: 7

@@ -1,0 +1,65 @@
+{
+  "name": "challenge-automation-psc",
+  "version": "1.0.0",
+  "description": "Automation testing challenge using Playwright and TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report",
+
+    "test:api:qa": "node scripts/run-tests.js qa tests/api/pokemon.spec.ts",
+    "test:api:cert": "node scripts/run-tests.js cert tests/api/pokemon.spec.ts",
+
+    "test:web:qa": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts",
+    "test:web:cert": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts",
+
+    "test:web:qa:headed": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --headed",
+    "test:web:cert:headed": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --headed",
+
+    "test:web:qa:debug": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --debug",
+    "test:web:cert:debug": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --debug",
+
+    "test:web:smoke:qa": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @smoke",
+    "test:web:smoke:cert": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --grep @smoke",
+
+    "test:web:payment:qa": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @payment",
+    "test:web:payment:cert": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --grep @payment",
+
+    "test:web:payment:qa:headed": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @payment --headed",
+    "test:web:payment:cert:headed": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --grep @payment --headed",
+
+    "test:qa": "node scripts/run-tests.js qa",
+    "test:cert": "node scripts/run-tests.js cert",
+
+    "test:qa:headed": "node scripts/run-tests.js qa --headed",
+    "test:cert:headed": "node scripts/run-tests.js cert --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PaulSuyCa/challenge-automation-psc.git"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "automation",
+    "api-testing",
+    "web-testing",
+    "qa"
+  ],
+  "author": "Paul Suybate",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PaulSuyCa/challenge-automation-psc/issues"
+  },
+  "homepage": "https://github.com/PaulSuyCa/challenge-automation-psc#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.8.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}
