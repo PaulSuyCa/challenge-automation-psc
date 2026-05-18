@@ -361,6 +361,231 @@ Payment Status: Paid
 | `npm run report` | Abre el reporte HTML de Playwright |
 
 ---
+## Ejecución en GitHub Actions
+
+El proyecto incluye un workflow de GitHub Actions para ejecutar las pruebas automatizadas directamente desde el repositorio.
+
+El archivo del workflow se encuentra en:
+
+```text
+.github/workflows/playwright-tests.yml
+```
+
+---
+
+### ¿Cuándo se ejecuta automáticamente?
+
+El workflow se ejecuta automáticamente cuando se realiza un `push` o se crea un `pull_request` hacia las ramas configuradas:
+
+```text
+main
+feature/automation-testing
+```
+
+En estas ejecuciones automáticas se validan los flujos más estables del proyecto:
+
+```text
+TypeScript validation
+API tests QA
+Web Smoke Test QA
+```
+
+Esto permite verificar rápidamente que el proyecto compile correctamente y que las pruebas principales no se hayan roto.
+
+---
+
+### ¿Qué ejecuta el job automático?
+
+El job principal ejecuta:
+
+```bash
+npm run typecheck
+npm run test:api:qa
+node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @smoke --project=web-chromium
+```
+
+Este flujo cubre:
+
+- Validación de errores TypeScript.
+- Pruebas API contra PokeAPI.
+- Smoke test Web de PHPTravels.
+- Ejecución en Chromium para reducir variabilidad entre navegadores.
+
+---
+
+### Ejecución manual desde GitHub Actions
+
+También es posible ejecutar pruebas manualmente desde la pestaña **Actions**.
+
+Ruta:
+
+```text
+GitHub → Actions → Playwright Automation Tests → Run workflow
+```
+
+El workflow permite seleccionar parámetros como:
+
+| Parámetro | Valores | Descripción |
+|---|---|---|
+| `environment` | `qa` / `cert` | Ambiente donde se ejecutarán las pruebas |
+| `run_api` | `true` / `false` | Permite ejecutar pruebas API |
+| `run_payment` | `true` / `false` | Permite ejecutar el flujo Web completo de pago |
+
+---
+
+### Ejecución manual de API por ambiente
+
+Para ejecutar API en QA:
+
+```text
+environment = qa
+run_api = true
+run_payment = false
+```
+
+Para ejecutar API en CERT:
+
+```text
+environment = cert
+run_api = true
+run_payment = false
+```
+
+El workflow genera dinámicamente el archivo `.properties` correspondiente al ambiente seleccionado.
+
+Ejemplo para QA:
+
+```properties
+environment=QA
+baseUrl=https://pokeapi.co/api/v2
+webBaseUrl=https://phptravels.net/
+secretVariable=QA_SECRET_KEY
+```
+
+Ejemplo para CERT:
+
+```properties
+environment=CERT
+baseUrl=https://pokeapi.co/api/v2
+webBaseUrl=https://phptravels.net/
+secretVariable=CERT_SECRET_KEY
+```
+
+---
+
+### Ejecución manual del flujo completo de pago Web
+
+El flujo completo de reserva y pago Web se ejecuta manualmente porque depende de un ambiente demo externo.
+
+Para ejecutarlo:
+
+```text
+GitHub → Actions → Playwright Automation Tests → Run workflow
+```
+
+Seleccionar:
+
+```text
+environment = qa
+run_api = false
+run_payment = true
+```
+
+Este flujo ejecuta:
+
+```bash
+node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @payment --project=web-chromium
+```
+
+El flujo completo valida:
+
+```text
+Home
+→ Stays
+→ Hotel Details
+→ Room Selection
+→ Booking
+→ Stripe Payment
+→ Invoice con Payment Successful
+```
+
+---
+
+### Secrets necesarios
+
+El workflow utiliza variables secretas para manejar información sensible.
+
+Configurar los secrets desde:
+
+```text
+Settings → Secrets and variables → Actions → New repository secret
+```
+
+Secrets requeridos:
+
+```text
+QA_SECRET_KEY
+CERT_SECRET_KEY
+```
+
+Estos valores no se suben al repositorio. GitHub Actions los inyecta de forma segura durante la ejecución.
+
+---
+
+### Reportes y evidencias en GitHub Actions
+
+Al finalizar la ejecución, GitHub Actions publica los resultados como artifacts descargables.
+
+Artifacts generados:
+
+| Artifact | Contenido |
+|---|---|
+| `playwright-report-api-smoke` | Reporte HTML de API + Smoke Web |
+| `test-results-api-smoke` | Evidencias de API + Smoke Web |
+| `playwright-report-api-qa` | Reporte HTML de API ejecutado manualmente en QA |
+| `playwright-report-api-cert` | Reporte HTML de API ejecutado manualmente en CERT |
+| `playwright-report-payment` | Reporte HTML del flujo completo de pago |
+| `test-results-payment` | Evidencias del flujo completo de pago |
+
+Para descargarlos:
+
+```text
+GitHub → Actions → Seleccionar ejecución → Artifacts
+```
+
+Los artifacts pueden incluir:
+
+- Reporte HTML de Playwright.
+- Screenshots.
+- Videos en caso de fallo.
+- Traces generados por Playwright.
+- Evidencias de ejecución.
+
+---
+
+### Resumen de jobs
+
+| Job | Ejecución | Objetivo |
+|---|---|---|
+| `api-and-smoke-tests` | Automática en push/pull request | Validar TypeScript, API QA y Smoke Web QA |
+| `manual-api-test` | Manual desde Actions | Ejecutar API por ambiente QA o CERT |
+| `web-payment-test` | Manual desde Actions | Ejecutar flujo completo de reserva y pago Web |
+
+---
+
+### Consideración sobre el flujo de pago
+
+El flujo `@payment` se ejecuta de forma manual porque PHPTravels es un ambiente demo externo y puede presentar comportamientos variables como:
+
+- Lentitud del sitio.
+- Cambios temporales en disponibilidad.
+- Estados intermedios como `Processing`.
+- Dependencia del gateway Stripe en modo test.
+- Redirecciones dinámicas.
+
+Por ese motivo, el pipeline automático ejecuta el smoke test web, mientras que el flujo completo de pago queda disponible para ejecución manual bajo demanda.
+
+---
 
 ## Buenas prácticas aplicadas
 
