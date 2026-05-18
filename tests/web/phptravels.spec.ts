@@ -59,6 +59,10 @@ test.describe('PHPTravels - Web Tests', () => {
 
     await paymentPage.proceedToStripeCheckout();
     await paymentPage.waitForStripeFormLoaded();
+    if (!stripeTestCards?.successfulVisa) {
+      throw new Error('No se encontró la tarjeta de prueba successfulVisa en data/stripeTestCards.ts');
+    }
+
     await paymentPage.payWithStripeCard(stripeTestCards.successfulVisa);
     await paymentPage.validatePaymentResult();
 

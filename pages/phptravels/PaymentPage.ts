@@ -45,7 +45,7 @@ export class PaymentPage {
   }
 
   /**
-   * Completa tarjeta Stripe, envía el pago y espera la confirmación final.
+   * Completa tarjeta Stripe, cubre campos adicionales de CI y envía el pago.
    */
   async payWithStripeCard(cardData: StripeCardData): Promise<void> {
     await this.page.waitForLoadState('domcontentloaded');
@@ -69,6 +69,10 @@ export class PaymentPage {
       'input[name="billingName"], input[name="name"], #billingName, input[autocomplete="cc-name"]',
       cardData.cardHolder
     );
+
+    // En CI Stripe puede mostrar Link, ZIP o teléfono. Se manejan solo si aparecen.
+    await this.disableSaveInformationIfVisible();
+    await this.fillOptionalBillingFields(cardData);
 
     await this.submitPayment();
   }
@@ -283,6 +287,7 @@ export class PaymentPage {
           'input[type="tel"]',
           'input[autocomplete="tel"]',
           'input[placeholder*="Phone"]',
+          'input[placeholder*="555"]',
           'input[aria-label*="Phone"]',
         ].join(', '),
         cardData.phoneNumber

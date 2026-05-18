@@ -1,13 +1,13 @@
 /**
- * Datos de tarjeta Stripe para completar formularios de pago en modo test.
+ * Data de tarjetas de prueba Stripe usada para validar pagos exitosos en ambiente demo.
  */
 export const stripeTestCards = {
   successfulVisa: {
     cardNumber: '4242424242424242',
-    expiryDate: '1234',
+    expiryDate: '12/34',
     cvc: '123',
     cardHolder: 'Paul Automation',
-    zipCode: '10001',
-    phoneNumber: '2015550123',
+    zipCode: '15001',
+    phoneNumber: '999888777',
   },
 };
