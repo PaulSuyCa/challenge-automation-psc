@@ -5,13 +5,36 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
-    "test:api": "playwright test tests/api/pokemon.spec.ts",
+
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report",
+
     "test:api:qa": "node scripts/run-tests.js qa tests/api/pokemon.spec.ts",
     "test:api:cert": "node scripts/run-tests.js cert tests/api/pokemon.spec.ts",
+
+    "test:web:qa": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts",
+    "test:web:cert": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts",
+
+    "test:web:qa:headed": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --headed",
+    "test:web:cert:headed": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --headed",
+
+    "test:web:qa:debug": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --debug",
+    "test:web:cert:debug": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --debug",
+
+    "test:web:smoke:qa": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @smoke",
+    "test:web:smoke:cert": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --grep @smoke",
+
+    "test:web:payment:qa": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @payment",
+    "test:web:payment:cert": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --grep @payment",
+
+    "test:web:payment:qa:headed": "node scripts/run-tests.js qa tests/web/phptravels.spec.ts --grep @payment --headed",
+    "test:web:payment:cert:headed": "node scripts/run-tests.js cert tests/web/phptravels.spec.ts --grep @payment --headed",
+
     "test:qa": "node scripts/run-tests.js qa",
     "test:cert": "node scripts/run-tests.js cert",
-    "report": "playwright show-report",
-    "typecheck": "tsc --noEmit"
+
+    "test:qa:headed": "node scripts/run-tests.js qa --headed",
+    "test:cert:headed": "node scripts/run-tests.js cert --headed"
   },
   "repository": {
     "type": "git",
@@ -22,6 +45,7 @@
     "typescript",
     "automation",
     "api-testing",
+    "web-testing",
     "qa"
   ],
   "author": "Paul Suybate",

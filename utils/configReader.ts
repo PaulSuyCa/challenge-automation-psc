@@ -82,6 +82,10 @@ export function getBaseUrl(): string {
   return getRequiredProperty('baseUrl');
 }
 
+export function getWebBaseUrl(): string {
+  return getRequiredProperty('webBaseUrl');
+}
+
 export function getSecretKey(): string {
   const secretVariable = getRequiredProperty('secretVariable');
   const secretValue = process.env[secretVariable];
