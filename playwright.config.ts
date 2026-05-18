@@ -49,19 +49,19 @@ export default defineConfig({
         },
       },
     },
-    {
-      name: 'web-firefox',
-      testMatch: /.*web\/.*\.spec\.ts/,
-      use: {
-        ...devices['Desktop Firefox'],
-      },
-    },
-    {
-      name: 'web-webkit',
-      testMatch: /.*web\/.*\.spec\.ts/,
-      use: {
-        ...devices['Desktop Safari'],
-      },
+   {
+     name: 'web-firefox',
+     testMatch: /.*web\/.*\.spec\.ts/,
+     use: {
+       ...devices['Desktop Firefox'],
+     },
    },
+   {
+     name: 'web-webkit',
+     testMatch: /.*web\/.*\.spec\.ts/,
+     use: {
+       ...devices['Desktop Safari'],
+     },
+  },
   ]
 });

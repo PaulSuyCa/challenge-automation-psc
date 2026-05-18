@@ -5,8 +5,9 @@ export interface StripeCardData {
   expiryDate: string;
   cvc: string;
   cardHolder: string;
+  zipCode?: string;
+  phoneNumber?: string;
 }
-
 /**
  * Page Object para completar el formulario de pago con tarjeta Stripe.
  */
@@ -44,7 +45,7 @@ export class PaymentPage {
   }
 
   /**
-   * Completa tarjeta Stripe y envía el pago.
+   * Completa tarjeta Stripe, envía el pago y espera la confirmación final.
    */
   async payWithStripeCard(cardData: StripeCardData): Promise<void> {
     await this.page.waitForLoadState('domcontentloaded');
@@ -224,5 +225,68 @@ export class PaymentPage {
     });
 
     await payButton.click();
+  }
+  /**
+ * Desmarca la opción de guardar información de pago si Stripe Link la muestra.
+ */
+  private async disableSaveInformationIfVisible(): Promise<void> {
+    const checkboxName = /Save my information|faster checkout/i;
+
+    const pageCheckbox = this.page.getByRole('checkbox', {
+      name: checkboxName,
+    });
+
+    if (await pageCheckbox.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if (await pageCheckbox.isChecked().catch(() => false)) {
+        await pageCheckbox.uncheck({ force: true });
+      }
+
+      return;
+    }
+
+    for (const frame of this.page.frames()) {
+      const frameCheckbox = frame.getByRole('checkbox', {
+        name: checkboxName,
+      });
+
+      if (await frameCheckbox.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await frameCheckbox.isChecked().catch(() => false)) {
+          await frameCheckbox.uncheck({ force: true });
+        }
+
+        return;
+      }
+    }
+  }
+
+  /**
+   * Completa campos adicionales de facturación si Stripe los muestra en CI.
+   */
+  private async fillOptionalBillingFields(cardData: StripeCardData): Promise<void> {
+    if (cardData.zipCode) {
+      await this.fillOptionalStripeField(
+        [
+          'input[name="postal"]',
+          'input[name="postalCode"]',
+          'input[autocomplete="postal-code"]',
+          'input[placeholder="ZIP"]',
+          'input[aria-label="ZIP"]',
+        ].join(', '),
+        cardData.zipCode
+      );
+    }
+
+    if (cardData.phoneNumber) {
+      await this.fillOptionalStripeField(
+        [
+          'input[name="phone"]',
+          'input[type="tel"]',
+          'input[autocomplete="tel"]',
+          'input[placeholder*="Phone"]',
+          'input[aria-label*="Phone"]',
+        ].join(', '),
+        cardData.phoneNumber
+      );
+    }
   }
 }

@@ -7,5 +7,7 @@ export const stripeTestCards = {
     expiryDate: '1234',
     cvc: '123',
     cardHolder: 'Paul Automation',
+    zipCode: '10001',
+    phoneNumber: '2015550123',
   },
 };
